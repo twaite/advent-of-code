@@ -12,25 +12,37 @@ fn main() {
     }
 
     let input = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
-    let result = get_valid_games(&input);
+    let count = count_ids_of_valid_games(&input);
+    let power = sum_powers_of_valid_games(&input);
 
-    print!("Number of valid games: {}", result);
+    println!("Count of IDs from valid games: {}", count);
+    println!("Power of cubes from valid games: {}", power);
 }
 
-fn get_valid_games(input: &str) -> u32 {
+fn get_games(input: &str) -> Vec<Game> {
     return input
         .lines()
         .map(|game| game.parse::<Game>().unwrap())
+        .collect::<Vec<Game>>();
+}
+
+fn count_ids_of_valid_games(input: &str) -> u32 {
+    return get_games(input)
+        .iter()
         .filter(|game| game.is_valid())
         .map(|game| game.id)
         .sum();
+}
+
+fn sum_powers_of_valid_games(input: &str) -> u32 {
+    return get_games(input).iter().map(|game| game.get_power()).sum();
 }
 
 /**
  * Peek
  */
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Throw {
     red: u32,
     blue: u32,
@@ -99,8 +111,37 @@ impl Game {
         let blue_total = 14;
 
         return self.throws.iter().all(|throw| {
-            throw.red < red_total && throw.green < green_total && throw.blue < blue_total
+            throw.red <= red_total && throw.green <= green_total && throw.blue <= blue_total
         });
+    }
+
+    fn get_power(&self) -> u32 {
+        let max_throws = self.throws.iter().fold(
+            Throw {
+                red: 0,
+                green: 0,
+                blue: 0,
+            },
+            |acc, next| {
+                let mut throw = acc.clone();
+
+                if next.red > acc.red {
+                    throw.red = next.red;
+                }
+
+                if next.green > acc.green {
+                    throw.green = next.green;
+                }
+
+                if next.blue > acc.blue {
+                    throw.blue = next.blue;
+                }
+
+                return throw;
+            },
+        );
+
+        return max_throws.red * max_throws.green * max_throws.blue;
     }
 }
 
@@ -122,31 +163,60 @@ impl Game {
     "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red",
     false
 )]
-#[case("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green", true)]
+#[case("Game 5: 6 red, 1 blue, 13 green; 2 blue, 1 red, 2 green", true)]
 
 fn test_game_is_valid(#[case] input: Game, #[case] expected: bool) {
     assert_eq!(input.is_valid(), expected);
 }
 
 #[rstest]
+#[case("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green", 48)]
+#[case("Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue", 12)]
+#[case(
+    "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red",
+    1560
+)]
+#[case(
+    "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red",
+    630
+)]
+#[case("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green", 36)]
+fn test_get_power(#[case] input: Game, #[case] expected: u32) {
+    assert_eq!(input.get_power(), expected);
+}
+
+#[rstest]
 #[case(
     "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
-        Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
-        Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
-        Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
-        Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
+    Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+    Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+    Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+    Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
     8
 )]
 #[case(
     "Game 20: 4 green, 3 blue, 1 red; 9 red, 14 blue, 9 green; 1 blue, 17 red, 2 green; 8 red, 13 blue, 8 green; 7 red, 2 green, 20 blue; 6 green, 13 red, 5 blue
-Game 21: 7 red, 1 blue; 1 blue, 5 red, 4 green; 5 green, 5 red; 7 red, 2 green; 4 green, 2 red, 1 blue
-Game 22: 6 red, 8 green, 18 blue; 2 green, 7 blue, 2 red; 18 blue, 8 green, 1 red; 10 red, 7 green, 20 blue; 5 blue, 10 green, 4 red
-Game 23: 2 green, 2 red, 15 blue; 2 red, 6 green, 4 blue; 8 red, 5 green
-Game 28: 9 red, 7 blue; 6 blue, 11 red; 10 red, 10 blue, 3 green",
+    Game 21: 7 red, 1 blue; 1 blue, 5 red, 4 green; 5 green, 5 red; 7 red, 2 green; 4 green, 2 red, 1 blue
+    Game 22: 6 red, 8 green, 18 blue; 2 green, 7 blue, 2 red; 18 blue, 8 green, 1 red; 10 red, 7 green, 20 blue; 5 blue, 10 green, 4 red
+    Game 23: 2 green, 2 red, 15 blue; 2 red, 6 green, 4 blue; 8 red, 5 green
+    Game 28: 9 red, 7 blue; 6 blue, 11 red; 10 red, 10 blue, 3 green",
     49
 )]
-fn test_get_valid_games(#[case] input: &str, #[case] expected: u32) {
-    assert_eq!(get_valid_games(input), expected);
+fn test_count_ids_of_valid_games(#[case] input: &str, #[case] expected: u32) {
+    assert_eq!(count_ids_of_valid_games(input), expected);
+}
+
+#[rstest]
+#[case(
+    "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+    Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+    Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+    Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+    Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
+    2286
+)]
+fn test_(#[case] input: &str, #[case] expected: u32) {
+    assert_eq!(sum_powers_of_valid_games(input), expected);
 }
 
 #[rstest]
