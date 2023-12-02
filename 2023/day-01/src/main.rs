@@ -14,7 +14,7 @@ pub enum Order {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if (!(args.len() == 2)) {
+    if args.len() < 2 {
         panic!("Please provide a file name as an argument");
     }
 
