@@ -1,9 +1,24 @@
 use regex::Regex;
-use std::collections::HashMap;
+use std::env;
 use std::fs;
 
+static NUMBER_MAP: [&str; 9] = [
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
+
+pub enum Order {
+    First,
+    Last,
+}
+
 fn main() {
-    let input = fs::read_to_string("input.txt").expect("Something went wrong reading the file");
+    let args: Vec<String> = env::args().collect();
+
+    if (!(args.len() == 2)) {
+        panic!("Please provide a file name as an argument");
+    }
+
+    let input = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
     let result = part_one(&input);
     println!("Total Part One: {}", result);
 
@@ -27,56 +42,98 @@ pub fn part_one(input: &str) -> u32 {
 }
 
 pub fn part_two(input: &str) -> u32 {
-    let re = Regex::new(r"\d").unwrap();
-    let mut number_map = HashMap::new();
-    number_map.insert("one", "1");
-    number_map.insert("two", "2");
-    number_map.insert("three", "3");
-    number_map.insert("four", "4");
-    number_map.insert("five", "5");
-    number_map.insert("six", "6");
-    number_map.insert("seven", "7");
-    number_map.insert("eight", "8");
-    number_map.insert("nine", "9");
-
-    let number_string_regex = number_map
-        .keys()
-        .map(|k| k.to_string())
-        .collect::<Vec<String>>()
-        .join("|");
-
-    let regex_string = String::from(r"\d|") + &number_string_regex;
-    let re = Regex::new(&regex_string).unwrap();
-
     return input
         .lines()
         .map(|line| {
-            re.find_iter(line)
-                .map(|m| m.as_str())
-                .collect::<Vec<&str>>()
+            let first = find_index(line, &Order::First).unwrap();
+            let last = find_index(line, &Order::Last).unwrap();
+
+            return first * 10 + last;
         })
-        .map(|nums| {
-            let mut first = nums[0].to_string();
-            let mut last = nums.iter().last().unwrap().to_string();
-
-            first = match number_map.get(first.as_str()) {
-                Some(v) => v.to_string(),
-                None => first,
-            };
-
-            last = match number_map.get(last.as_str()) {
-                Some(v) => v.to_string(),
-                None => last,
-            };
-
-            first + &last
-        })
-        .map(|line| line.parse::<u32>().unwrap())
         .sum();
+}
+
+pub fn find_index(input: &str, order: &Order) -> Option<u32> {
+    let re = Regex::new(r"\d").unwrap();
+
+    let digit_idx_iter = re.find_iter(input).map(|m| m.start());
+    let string_idx_iter = NUMBER_MAP
+        .iter()
+        .enumerate()
+        .map(|(num, str)| (num, input.find(str)))
+        .filter(|(_, idx)| idx.is_some())
+        .map(|(num, idx)| (num as u32 + 1, idx.unwrap()));
+
+    let digit_idx = match order {
+        Order::First => digit_idx_iter.min(),
+        Order::Last => digit_idx_iter.max(),
+    };
+
+    let string_idx = match order {
+        Order::First => string_idx_iter.min_by(|(_, idx1), (_, idx2)| idx1.cmp(idx2)),
+        Order::Last => string_idx_iter.max_by(|(_, idx1), (_, idx2)| idx1.cmp(idx2)),
+    };
+
+    return match (digit_idx, string_idx, order) {
+        (Some(d), Some((num, s)), order) => match order {
+            Order::First => {
+                if d < s {
+                    input.chars().nth(d).unwrap().to_digit(10)
+                } else {
+                    Some(num)
+                }
+            }
+            Order::Last => {
+                if d > s {
+                    input.chars().nth(d).unwrap().to_digit(10)
+                } else {
+                    Some(num)
+                }
+            }
+        },
+        (Some(d), None, _) => input.chars().nth(d).unwrap().to_digit(10),
+        (None, Some((num, _)), _) => Some(num),
+        (None, None, _) => None,
+    };
 }
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_find_first_number() {
+        assert_eq!(crate::find_index("1abc2", &crate::Order::First), Some(1));
+        assert_eq!(
+            crate::find_index("pqr3stu8vwx", &crate::Order::First),
+            Some(3)
+        );
+        assert_eq!(
+            crate::find_index("abcone234", &crate::Order::First),
+            Some(1)
+        );
+        assert_eq!(crate::find_index("eight", &crate::Order::First), Some(8));
+        assert_eq!(
+            crate::find_index("eightwod4e5f", &crate::Order::First),
+            Some(8)
+        );
+    }
+
+    #[test]
+    fn test_find_last_number() {
+        assert_eq!(crate::find_index("1abc2", &crate::Order::Last), Some(2));
+        assert_eq!(
+            crate::find_index("1abckjsad2oaisdfh", &crate::Order::Last),
+            Some(2)
+        );
+        assert_eq!(
+            crate::find_index("1ab9afjk83", &crate::Order::Last),
+            Some(3)
+        );
+        assert_eq!(
+            crate::find_index("1abc2sdfkjofourthreeight", &crate::Order::Last),
+            Some(8)
+        );
+    }
 
     #[test]
     fn test_part_one() {
