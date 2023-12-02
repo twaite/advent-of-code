@@ -75,21 +75,10 @@ pub fn find_index(input: &str, order: &Order) -> Option<u32> {
     };
 
     return match (digit_idx, string_idx, order) {
-        (Some(d), Some((num, s)), order) => match order {
-            Order::First => {
-                if d < s {
-                    input.chars().nth(d).unwrap().to_digit(10)
-                } else {
-                    Some(num)
-                }
-            }
-            Order::Last => {
-                if d > s {
-                    input.chars().nth(d).unwrap().to_digit(10)
-                } else {
-                    Some(num)
-                }
-            }
+        (Some(d), Some((num, s)), order) => match (d < s, d > s, order) {
+            (true, _, Order::First) => input.chars().nth(d).unwrap().to_digit(10),
+            (_, true, Order::Last) => input.chars().nth(d).unwrap().to_digit(10),
+            _ => Some(num),
         },
         (Some(d), None, _) => input.chars().nth(d).unwrap().to_digit(10),
         (None, Some((num, _)), _) => Some(num),
