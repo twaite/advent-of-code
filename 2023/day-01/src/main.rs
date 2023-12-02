@@ -102,8 +102,8 @@ mod tests {
         );
         assert_eq!(crate::find_index("eight", &crate::Order::First), Some(8));
         assert_eq!(
-            crate::find_index("eightwod4e5f", &crate::Order::First),
-            Some(8)
+            crate::find_index("1five72cxh3fivefive", &crate::Order::First),
+            Some(1)
         );
     }
 
@@ -121,6 +121,10 @@ mod tests {
         assert_eq!(
             crate::find_index("1abc2sdfkjofourthreeight", &crate::Order::Last),
             Some(8)
+        );
+        assert_eq!(
+            crate::find_index("35jxmgctsevennine", &crate::Order::Last),
+            Some(9)
         );
     }
 
