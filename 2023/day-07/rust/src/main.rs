@@ -128,7 +128,7 @@ impl FromStr for Hand {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re = regex::Regex::new(r"([2-9TJQKA]{5}) (\d+)").unwrap();
 
-        let captures = re.captures(s).unwrap();
+        let captures = re.captures(s.trim()).unwrap();
 
         Ok(Hand {
             cards: captures.get(1).unwrap().as_str().chars().collect(),
@@ -149,6 +149,57 @@ mod tests {
         KTJJT 220
         QQQJA 483",
         6440
+    )]
+    #[case(
+        "2345A 1
+        Q2KJJ 13
+        Q2Q2Q 19
+        T3T3J 17
+        T3Q33 11
+        2345J 3
+        J345A 2
+        32T3K 5
+        T55J5 29
+        KK677 7
+        KTJJT 34
+        QQQJA 31
+        JJJJJ 37
+        JAAAA 43
+        AAAAJ 59
+        AAAAA 61
+        2AAAA 23
+        2JJJJ 53
+        JJJJ2 41",
+        6592
+    )]
+    #[case(
+        "627Q8 1
+        A26Q7 2
+        2K637 3",
+        11
+    )]
+    #[case(
+        "AAAQQ 1
+        22288 2
+        33232 3",
+        11
+    )]
+    #[case(
+        "QQQQQ 1
+        AAAAA 2
+        QQQQQ 3
+        AAAAA 4",
+        1 * 1 + 2 * 3 + 3 * 2 + 4 * 4
+    )]
+    #[case(
+        "23232 1
+        KQJT9 2",
+        4
+    )]
+    #[case(
+        "9TTTT 1
+        98888 2",
+        4
     )]
     fn test_get_total_winnings(#[case] input: &str, #[case] expected: u32) {
         assert_eq!(crate::get_total_winnings(input), expected);
