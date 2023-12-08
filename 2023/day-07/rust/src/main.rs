@@ -13,15 +13,28 @@ fn main() {
     let input = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
 
     let result = get_total_winnings(input.as_str());
+
+    println!("Total winnings: {}", result);
 }
 
 fn get_total_winnings(input: &str) -> u32 {
-    todo!();
+    let mut hands = input
+        .lines()
+        .map(|line| Hand::from_str(line).unwrap())
+        .collect::<Vec<Hand>>();
+
+    hands.sort();
+
+    hands
+        .iter()
+        .enumerate()
+        .map(|(idx, hand)| hand.bid * (idx as u32 + 1))
+        .sum()
 }
 
 fn get_card_value(card: char) -> Result<u32, &'static str> {
     match card {
-        'A' => Ok(13),
+        'A' => Ok(14),
         'K' => Ok(13),
         'Q' => Ok(12),
         'J' => Ok(11),
@@ -31,7 +44,7 @@ fn get_card_value(card: char) -> Result<u32, &'static str> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq)]
 struct Hand {
     cards: Vec<char>,
     bid: u32,
@@ -39,8 +52,6 @@ struct Hand {
 
 impl Hand {
     fn get_hand_strength(&self) -> u32 {
-        println!("{:?}", self);
-
         let mut values = self
             .cards
             .iter()
@@ -102,6 +113,12 @@ impl PartialOrd for Hand {
     }
 }
 
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.get_hand_strength().cmp(&other.get_hand_strength())
+    }
+}
+
 #[derive(Debug)]
 struct ParseHandError;
 
@@ -140,16 +157,17 @@ mod tests {
     #[rstest]
     #[case("423Q5 765", 42425)]
     #[case("22345 765", 1022345)]
-    #[case("2233A 765", 2022343)]
+    #[case("2233A 765", 2022344)]
     #[case("24332 765", 2024332)]
     #[case("222J5 765", 3022315)]
-    #[case("A2225 765", 3132225)]
+    #[case("A2225 765", 3142225)]
     #[case("22233 765", 4022233)]
     #[case("32223 765", 4032223)]
     #[case("QQQQ4 765", 5133324)]
     #[case("JJ2JJ 765", 5121321)]
     #[case("22222 765", 6022222)]
     #[case("KKKKK 765", 6144443)]
+    #[case("AAAAA 765", 6155554)]
     fn test_get_hand_strength(#[case] input: crate::Hand, #[case] expected: u32) {
         assert_eq!(input.get_hand_strength(), expected);
     }
