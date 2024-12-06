@@ -1,5 +1,6 @@
+import { describe, it } from "jsr:@std/testing/bdd";
 import { assertEquals } from "jsr:@std/assert";
-import { mapPatrolDistance } from "./main.ts";
+import { Map } from "./main.ts";
 
 const testCases = [
   {
@@ -13,65 +14,98 @@ const testCases = [
 ........#.
 #.........
 ......#...`,
-    expected: 41,
+    startIdx: 64,
+    start: [4, 6],
+    visited: 41,
   },
   {
     input: `....
 ....
 ....
 ^...`,
-    expected: 4,
+    startIdx: 12,
+    start: [0, 3],
+    visited: 4,
   },
   {
     input: `...v
 ....
 ....
 ....`,
-    expected: 4,
+    startIdx: 3,
+    start: [3, 0],
+    visited: 4,
   },
   {
     input: `....
 .>..
 ....
 ....`,
-    expected: 3,
+    startIdx: 5,
+    start: [1, 1],
+    visited: 3,
   },
   {
     input: `....
 ....
 .<..
 ....`,
-    expected: 2,
+    startIdx: 9,
+    start: [1, 2],
+    visited: 2,
   },
   {
     input: `....
 .>.#
 ....
 ....`,
-    expected: 4,
+    startIdx: 5,
+    start: [1, 1],
+    visited: 4,
   },
   {
     input: `....
 .>.#
 ....
 ..#.`,
-    expected: 5,
+    startIdx: 5,
+    start: [1, 1],
+    visited: 5,
   },
   {
     input: `....
 .>.#
 #...
 ..#.`,
-    expected: 6,
+    startIdx: 5,
+    start: [1, 1],
+    visited: 5,
+  },
+  {
+    input: `>..#
+.#..
+#...
+..#.`,
+    startIdx: 0,
+    start: [0, 0],
+    visited: 7,
   },
 ];
 
-testCases.splice(0, testCases.length).forEach(({ input, expected }) => {
-  Deno.test(
-    `Guard patrolled the expected number of locations: ${expected}`,
-    async () => {
-      const distance = await mapPatrolDistance(input);
-      assertEquals(distance, expected);
-    }
-  );
+testCases.forEach(({ input, startIdx, start, visited }, idx) => {
+  describe(`Case ${idx + 1}`, () => {
+    it(`sets the starting index set correctly`, () => {
+      assertEquals(new Map(input).startingIdx, startIdx);
+    });
+
+    it(`sets the start case set correctly`, () => {
+      assertEquals(new Map(input).startingLocation, start);
+    });
+
+    it(`maps the number of visited spots correctly`, async () => {
+      const map = new Map(input);
+      await map.progressToEnd({ render: false });
+      assertEquals(map.visited, visited);
+    });
+  });
 });
