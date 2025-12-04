@@ -2,4 +2,4 @@
 #include <string>
 #include <iostream>
 
-int turnDial(const std::istream &input);
+int turnDial(const std::istream &input, bool onlyIfTurnEndsOnZero);
