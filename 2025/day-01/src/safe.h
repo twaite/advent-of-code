@@ -1,4 +1,5 @@
 #pragma once
 #include <string>
+#include <iostream>
 
-int turnDial(const std::string &input);
+int turnDial(const std::istream &input);
