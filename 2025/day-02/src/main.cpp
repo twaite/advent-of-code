@@ -12,7 +12,7 @@ int main()
         return 1;
     }
 
-    int count = count_invalid_ids(input);
+    long count = count_invalid_ids(input);
 
     std::cout << "Count is: " << count
               << std::endl;
